@@ -377,14 +377,19 @@ checkresiduals(model3) # Check for auto-correlation
 topics_long <- read.csv("./Data/topics_per_hour.csv")
 topics_long$hour <- ymd_hms(topics_long$hour) 
 
-# Calculate offset (count of all misinformation tweets)
-dt <- data.table(topics_long)
-dt <- dt[, list(total = sum(n, na.rm=TRUE)), by = "hour"] # Aggregate to get total
-topics_long <- merge(topics_long, dt, by = "hour", all.x = TRUE) # Join back on
+# Calculate offset (count of all tweets)
+tw_hour <- read.csv("./Data/tweets_per_hour.csv")
+tw_hour$hour <- ymd_hms(tw_hour$hour) 
+topics_long <- merge(topics_long, tw_hour, by = "hour", all.x = TRUE) # Join on
 
-# Define intervention
-topics_long$intervention[topics_long$hour < "2020-03-23 20:00:00"] <- 0
-topics_long$intervention[topics_long$hour >= "2020-03-23 20:00:00"] <- 1
+# # Calculate offset (count of all misinformation tweets - if need)
+# dt <- data.table(topics_long)
+# dt <- dt[, list(tweets = sum(n, na.rm=TRUE)), by = "hour"] # Aggregate to get total
+# topics_long <- merge(topics_long, dt, by = "hour", all.x = TRUE) # Join back on
+
+# # Define intervention
+# topics_long$intervention[topics_long$hour < "2020-03-23 20:00:00"] <- 0
+# topics_long$intervention[topics_long$hour >= "2020-03-23 20:00:00"] <- 1
 
 # Split by topic
 topic1 <- topics_long[topics_long$topic == 1,]

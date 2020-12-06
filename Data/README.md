@@ -8,3 +8,4 @@ Description of files:
 * _tweets_per_min.csv_ - Same data as in _tweets_per_hour.csv_ but for minutes of day (recorded in the column 'minute'). Same variables descriptions otherwise. Data used to calculate Appendix Tables A and B.
 * _tweets_per_min_long.csv_ - As above but in long format (same format as hour file).
 * _topic_models_fit.csv_ - Raw values of topic modelling model fit plotted in Appendix Figure B. Column 'topics' gives the number of topics within a model. The other columns refer to the values of four model fit evaluation statistics.
+* _topics_per_hour.csv_ - Data used to produce the results in Table 4. Columns include 'hour' which is the date time by hour of day, 'topic' which is the topic (1 to 4), and 'n' which is the total number of tweets for each topic at the time.

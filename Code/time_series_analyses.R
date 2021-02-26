@@ -1,6 +1,6 @@
 ### Time Series Analysis ###
 
-# Purpose: Some code to mess about with methods that we will employ in the paper.
+# Purpose: Final analytical code for replicating all analyses in the paper.
 
 # Libraries
 library(CausalImpact)
@@ -15,6 +15,8 @@ library(tidyr)
 library(zoo)
 
 ### Part 1: Setting up data for analysis ###
+
+# Note not replicable due to data sharing agreement and our ethical approval. Skip to Section 2 for code to replicate time series analyses. Code below included for full open sharing of all code.
 
 # Load Twitter data
 lockdown <- read.csv("./Data/twitter_covid_lockdown_mar2020_small_cleaned.csv", header = TRUE)
@@ -107,9 +109,11 @@ write.csv(lockdown, "./Data/lockdown_misinformation_merge.csv")
 tw_hour <- read.csv("./Data/tweets_per_hour.csv")
 tw_hour$hour <- ymd_hms(tw_hour$hour) 
 tw_hour_long <- read.csv("./Data/tweets_per_hour_long.csv")
+tw_hour_long$hour <- ymd_hms(tw_hour_long$hour) 
 tw_minute <- read.csv("./Data/tweets_per_min.csv")
 tw_minute$minute <- ymd_hms(tw_minute$minute) 
 tw_minute_long <- read.csv("./Data/tweets_per_min_long.csv")
+tw_minute_long$hour <- ymd_hms(tw_minute_long$hour) 
 
 # Counts of outcome variables pre- and post-announcement
 table(lockdown$tweets, lockdown$intervention)
@@ -175,13 +179,14 @@ ggplot(tw_minute, aes(x = hour, y = misinformation)) +
 
 # Plot in long format
 # Hours
-ggplot(tw_minute_long, aes(x = hour, y = count, group = type, color = type)) +
+ggplot(tw_hour_long, aes(x = hour, y = count, group = type, color = type)) +
   geom_point() + # Consider just geom_path()
   #geom_smooth(method = "gam", se = F) +
   geom_vline(xintercept = as.numeric(ymd_hms("2020-03-23 20:00:00")), linetype="dotted") +
   scale_y_continuous(trans = 'log2') + # Log transform y-axis
   ylab("Number of tweets") +
   xlab("Time")
+
 # Minutes
 ggplot(tw_minute_long, aes(x = hour, y = count, group = type, color = type)) +
   geom_point() + # Consider just geom_path()
@@ -192,6 +197,9 @@ ggplot(tw_minute_long, aes(x = hour, y = count, group = type, color = type)) +
   xlab("Time")
 
 # Plot in facet format
+# Specify order of facet plot
+tw_hour_long$type <- factor(tw_hour_long$type, levels = c("misinformation", "tweets", "bots"))
+
 # Hours
 ggplot(tw_hour_long, aes(x = hour, y = count)) +
   geom_line() + # Consider just geom_path()
@@ -201,6 +209,9 @@ ggplot(tw_hour_long, aes(x = hour, y = count)) +
   #ylim(0,125) +
   ylab("Number of tweets") +
   xlab("Time")
+
+ggsave(plot = last_plot(), filename = "./Plots/Figure_1.tiff", dpi = 300)
+
 # Minutes
 ggplot(tw_minute_long, aes(x = hour, y = count)) +
   geom_line() + # Consider just geom_path()
@@ -259,40 +270,7 @@ summary(model1d) # Get summary statistics
 
 # Method 2: Poisson Regression Model
 
-# Misinformation - hours
-model2a <- glm(misinformation ~ offset(log(tweets)) + intervention + hour + harmonic(hour,2,24), family=quasipoisson, tw_hour) # If overdispersion switch to family=quasipoisson, seasonality can be introduced using harmonic(hour,2,24) - twice per 24 hours in this example (2 is number of sin and cosine pairs (Fourier terms), 24 is length of the period - assumes is fixed over time mind you), and I(hour):intervention can look at change in slope
-summary(model2a)
-exp(coef(model2a))
-exp(confint(model2a))
-
-# Misinformation - minutes
-model2b <- glm(misinformation ~ offset(log(tweets)) + intervention + minute + harmonic(minute,2,24), family=quasipoisson, tw_minute)
-summary(model2b)
-exp(coef(model2b))
-exp(confint(model2b))
-
-# Bots - hours
-model2c <- glm(bots ~ offset(log(tweets)) + intervention + hour + harmonic(hour,2,24), family=quasipoisson, tw_hour)
-summary(model2c)
-exp(coef(model2c))
-exp(confint(model2c))
-
-# Bots - minutes
-model2d <- glm(bots ~ offset(log(tweets)) + intervention + minute + harmonic(minute,2,24), family=quasipoisson, tw_minute)
-summary(model2d)
-exp(coef(model2d))
-exp(confint(model2d))
-
-# Check model performance and over-dispersion (for all models)
-summary(model2)$dispersion # Overdispersion statistic
-res2 <- residuals(model2,type="deviance") # Save residuals
-hist(res2) # Check for normal distribution centered around 0
-plot(tw_hour$hour,res2,main="Residuals over time",ylab="Deviance residuals",xlab="Date") # Check for temporal trends
-plot(tw_minute$minute,res2,main="Residuals over time",ylab="Deviance residuals",xlab="Date") # Check for temporal trends
-acf(res2) # Check auto-correlation
-pacf(res2) # Check partial auto-correlation
-anova(model2a, model2b, test="F") # test if Model has improved (accounting for over-dispersion)
-
+source("./Scripts/negativebinomial_modelling.R") # Run this for all analyses
 
 # Method 3: ARIMA (time-series regression)
 
@@ -377,19 +355,14 @@ checkresiduals(model3) # Check for auto-correlation
 topics_long <- read.csv("./Data/topics_per_hour.csv")
 topics_long$hour <- ymd_hms(topics_long$hour) 
 
-# Calculate offset (count of all tweets)
-tw_hour <- read.csv("./Data/tweets_per_hour.csv")
-tw_hour$hour <- ymd_hms(tw_hour$hour) 
-topics_long <- merge(topics_long, tw_hour, by = "hour", all.x = TRUE) # Join on
+# Calculate offset (count of all misinformation tweets - if need)
+dt <- data.table(topics_long)
+dt <- dt[, list(misinformation = sum(n, na.rm=TRUE)), by = "hour"] # Aggregate to get total
+topics_long <- merge(topics_long, dt, by = "hour", all.x = TRUE) # Join back on
 
-# # Calculate offset (count of all misinformation tweets - if need)
-# dt <- data.table(topics_long)
-# dt <- dt[, list(tweets = sum(n, na.rm=TRUE)), by = "hour"] # Aggregate to get total
-# topics_long <- merge(topics_long, dt, by = "hour", all.x = TRUE) # Join back on
-
-# # Define intervention
-# topics_long$intervention[topics_long$hour < "2020-03-23 20:00:00"] <- 0
-# topics_long$intervention[topics_long$hour >= "2020-03-23 20:00:00"] <- 1
+# Define intervention
+topics_long$intervention[topics_long$hour < "2020-03-23 20:00:00"] <- 0
+topics_long$intervention[topics_long$hour >= "2020-03-23 20:00:00"] <- 1
 
 # Split by topic
 topic1 <- topics_long[topics_long$topic == 1,]
@@ -397,7 +370,8 @@ topic2 <- topics_long[topics_long$topic == 2,]
 topic3 <- topics_long[topics_long$topic == 3,]
 topic4 <- topics_long[topics_long$topic == 4,]
 
-# Method 1: Causal Impact Model (Bayesian Structural Time Series and Counterfactual Estimation)
+
+## Method 1: Causal Impact Model (Bayesian Structural Time Series and Counterfactual Estimation)
 
 # Define intervention period
 pre.period <- ymd_hms(c("2020-03-21 20:00:00", "2020-03-23 19:00:00")) # Periods must not overlap
@@ -406,7 +380,7 @@ post.period <- ymd_hms(c("2020-03-23 20:00:00", "2020-03-25 20:00:00"))
 # Topic 1 #
 
 # Tidy data
-for_model <- zoo(cbind(topic1$n, topic1$total), topic1$hour) # Left cbind in here if want to add control variables
+for_model <- zoo(cbind(topic1$n, topic1$misinformation), topic1$hour) # Left cbind in here if want to add control variables
 colnames(for_model) = c("y", "x1") # Rename columns (if more than one use c("y", "x1", etc) if only one then "y")
 
 # Run analysis
@@ -417,7 +391,7 @@ summary(model_t1) # Get summary statistics
 # Topic 2 #
 
 # Tidy data
-for_model <- zoo(cbind(topic2$n, topic2$total), topic2$hour) # Left cbind in here if want to add control variables
+for_model <- zoo(cbind(topic2$n, topic2$misinformation), topic2$hour) # Left cbind in here if want to add control variables
 colnames(for_model) = c("y", "x1") # Rename columns (if more than one use c("y", "x1", etc) if only one then "y")
 
 # Run analysis
@@ -428,7 +402,7 @@ summary(model_t2) # Get summary statistics
 # Topic 3 #
 
 # Tidy data
-for_model <- zoo(cbind(topic3$n, topic3$total), topic3$hour) # Left cbind in here if want to add control variables
+for_model <- zoo(cbind(topic3$n, topic3$misinformation), topic3$hour) # Left cbind in here if want to add control variables
 colnames(for_model) = c("y", "x1") # Rename columns (if more than one use c("y", "x1", etc) if only one then "y")
 
 # Run analysis
@@ -439,7 +413,7 @@ summary(model_t3) # Get summary statistics
 # Topic 4 #
 
 # Tidy data
-for_model <- zoo(cbind(topic4$n, topic4$total), topic4$hour) # Left cbind in here if want to add control variables
+for_model <- zoo(cbind(topic4$n, topic4$misinformation), topic4$hour) # Left cbind in here if want to add control variables
 colnames(for_model) = c("y", "x1") # Rename columns (if more than one use c("y", "x1", etc) if only one then "y")
 
 # Run analysis
@@ -448,37 +422,100 @@ plot(model_t4) # Plot results
 summary(model_t4) # Get summary statistics
 
 
-# Method 2: Poisson Regression Model
+## Method 2: Poisson Regression Model
 
-# Misinformation - topic 1
-model2_t1 <- glm(n ~ offset(log(total)) + intervention + hour + harmonic(hour,2,24), family=quasipoisson, topic1)
-summary(model2_t1)
-exp(coef(model2_t1))
-exp(confint(model2_t1))
+# Note: make sure have run source("./Scripts/negativebinomial_modelling.R") before
+
+# Misinformation - topic 1 
+eqt1 <- n ~ offset(log(misinformation)) + intervention + ns(hour)
+mt1 <- glmmTMB(eqt1, 
+               data = topic1,
+               family=nbinom2
+)
+summary(mt1)
+exp(confint(mt1)) # confidence intervals
+
+# analysis of residuals
+topic1$mt1_res <- residuals(mt1, type = "pearson")
+
+# check autocorrelation
+plot_acf_diagnostics(.data = topic1, 
+                     .date = hour,
+                     .value = mt1_res, 
+                     .lags = 10,
+                     .line_size = 2,
+                     .show_white_noise_bars = TRUE,
+                     .interactive = FALSE)
 
 # Misinformation - topic 2
-model2_t2 <- glm(n ~ offset(log(total)) + intervention + hour + harmonic(hour,2,24), family=quasipoisson, topic2)
-summary(model2_t2)
-exp(coef(model2_t2))
-exp(confint(model2_t2))
+eqt2 <- n ~ offset(log(misinformation)) + intervention + ns(hour)
+mt2 <- glmmTMB(eqt2, 
+               data = topic2,
+               family=nbinom2
+)
+summary(mt2)
+exp(confint(mt2)) # confidence intervals
+
+# analysis of residuals
+topic2$mt2_res <- residuals(mt2, type = "pearson")
+
+# check autocorrelation
+plot_acf_diagnostics(.data = topic2, 
+                     .date = hour,
+                     .value = mt2_res, 
+                     .lags = 10,
+                     .line_size = 2,
+                     .show_white_noise_bars = TRUE,
+                     .interactive = FALSE)
 
 # Misinformation - topic 3
-model2_t3 <- glm(n ~ offset(log(total)) + intervention + hour + harmonic(hour,2,24), family=quasipoisson, topic3)
-summary(model2_t3)
-exp(coef(model2_t3))
-exp(confint(model2_t3))
+eqt3 <- n ~ offset(log(misinformation)) + intervention + ns(hour)
+mt3 <- glmmTMB(eqt3, 
+               data = topic3,
+               family=nbinom2
+)
+summary(mt3)
+exp(confint(mt3)) # confidence intervals
 
-# Misinformation - topic 4
-model2_t4 <- glm(n ~ offset(log(total)) + intervention + hour + harmonic(hour,2,24), family=quasipoisson, topic4)
-summary(model2_t4)
-exp(coef(model2_t4))
-exp(confint(model2_t4))
+# analysis of residuals
+topic3$mt3_res <- residuals(mt3, type = "pearson")
 
-# Method 3: ARIMA (time-series regression)
+# check autocorrelation
+plot_acf_diagnostics(.data = topic3, 
+                     .date = hour,
+                     .value = mt3_res, 
+                     .lags = 10,
+                     .line_size = 2,
+                     .show_white_noise_bars = TRUE,
+                     .interactive = FALSE)
+
+# Misinformation - topic 3
+eqt4 <- n ~ offset(log(misinformation)) + intervention + ns(hour)
+mt4 <- glmmTMB(eqt4, 
+               data = topic4,
+               family=nbinom2
+)
+summary(mt4)
+exp(confint(mt4)) # confidence intervals
+
+# analysis of residuals
+topic4$mt4_res <- residuals(mt4, type = "pearson")
+
+# check autocorrelation
+plot_acf_diagnostics(.data = topic4, 
+                     .date = hour,
+                     .value = mt4_res, 
+                     .lags = 10,
+                     .line_size = 2,
+                     .show_white_noise_bars = TRUE,
+                     .interactive = FALSE)
+
+
+## Method 3: ARIMA (time-series regression)
 
 # Topic 1
-preds <- cbind(topic1$total, topic1$intervention) # Define predictor variables
-colnames(preds) <- c("total", "intervention")
+preds <- cbind(topic1$misinformation, topic1$intervention) # Define predictor variables
+colnames(preds) <- c("misinformation", "intervention")
 model3_t1 <- auto.arima(topic1$n, xreg = preds) # Fit best fitting time series model
 model3_t1 # Print model
 coeftest(model3_t1) # Grab coefficients and model summary
@@ -486,8 +523,8 @@ confint(model3_t1) # Confidence Intervals
 checkresiduals(model3_t1) # Check for auto-correlation
 
 # Topic 2
-preds <- cbind(topic2$total, topic2$intervention) # Define predictor variables
-colnames(preds) <- c("total", "intervention")
+preds <- cbind(topic2$misinformation, topic2$intervention) # Define predictor variables
+colnames(preds) <- c("misinformation", "intervention")
 model3_t2 <- auto.arima(topic2$n, xreg = preds) # Fit best fitting time series model
 model3_t2 # Print model
 coeftest(model3_t2) # Grab coefficients and model summary
@@ -495,8 +532,8 @@ confint(model3_t2) # Confidence Intervals
 checkresiduals(model3_t2) # Check for auto-correlation
 
 # Topic 3
-preds <- cbind(topic3$total, topic3$intervention) # Define predictor variables
-colnames(preds) <- c("total", "intervention")
+preds <- cbind(topic3$misinformation, topic3$intervention) # Define predictor variables
+colnames(preds) <- c("misinformation", "intervention")
 model3_t3 <- auto.arima(topic3$n, xreg = preds) # Fit best fitting time series model
 model3_t3 # Print model
 coeftest(model3_t3) # Grab coefficients and model summary
@@ -504,10 +541,11 @@ confint(model3_t3) # Confidence Intervals
 checkresiduals(model3_t3) # Check for auto-correlation
 
 # Topic 4
-preds <- cbind(topic4$total, topic4$intervention) # Define predictor variables
-colnames(preds) <- c("total", "intervention")
+preds <- cbind(topic4$misinformation, topic4$intervention) # Define predictor variables
+colnames(preds) <- c("misinformation", "intervention")
 model3_t4 <- auto.arima(topic4$n, xreg = preds) # Fit best fitting time series model
 model3_t4 # Print model
 coeftest(model3_t4) # Grab coefficients and model summary
 confint(model3_t4) # Confidence Intervals
 checkresiduals(model3_t4) # Check for auto-correlation
+

@@ -1,21 +1,21 @@
 # Identifying how the spread of misinformation reacts to the announcement of the UK national lockdown: An interrupted time-series study
-Mark Green<sup>1</sup>, Elena Musi^2, Francisco Rowe1, Darren Charles3, Frances Darlington Pollock1, Chris Kypridemos4, Andrew Morse1, Patricia Rossini2, John Tulloch5,6, Andrew Davies1, Emily Dearden6,7, Henrdramoorthy Maheswaran8, Alex Singleton1, Roberto Vivancos5,6, Sally Sheard4.
+Mark Green<sup>1</sup>, Elena Musi<sup>2</sup>, Francisco Rowe<sup>1</sup>, Darren Charles<sup>3</sup>, Frances Darlington Pollock<sup>1</sup>, Chris Kypridemos<sup>4</sup>, Andrew Morse<sup>1</sup>, Patricia Rossini<sup>2</sup>, John Tulloch<sup>5,6</sup>, Andrew Davies<sup>1</sup>, Emily Dearden<sup>6,7</sup>, Henrdramoorthy Maheswaran<sup>8</sup>, Alex Singleton<sup>1</sup>, Roberto Vivancos<sup>5,6</sup>, Sally Sheard<sup>4</sup>.
 
-1 Department of Geography & Planning, University of Liverpool, Liverpool, UK
+<sup>1</sup> Department of Geography & Planning, University of Liverpool, Liverpool, UK
 
-2 Department of Communication & Media, University of Liverpool , Liverpool, UK
+<sup>2</sup> Department of Communication & Media, University of Liverpool , Liverpool, UK
 
-3 Institute of Population Health Sciences, University of Liverpool, Liverpool, UK
+<sup>3</sup> Institute of Population Health Sciences, University of Liverpool, Liverpool, UK
 
-4 Department of Public Health & Policy, University of Liverpool, Liverpool, UK
+<sup>4</sup> Department of Public Health & Policy, University of Liverpool, Liverpool, UK
 
-5 NIHR Heath Protection Research Unit in Emerging and Zoonotic Infections, University of Liverpool, Liverpool, UK
+<sup>5</sup> NIHR Heath Protection Research Unit in Emerging and Zoonotic Infections, University of Liverpool, Liverpool, UK
 
-6 Public Health England, UK
+<sup>6</sup> Public Health England, UK
 
-7 Greater Manchester Combined Authority, Manchester, UK
+<sup>7</sup> Greater Manchester Combined Authority, Manchester, UK
 
-8 Institute of Global Health Innovation, Imperial College London, London, UK.
+<sup>8</sup> Institute of Global Health Innovation, Imperial College London, London, UK.
 
 
 **Abstract**
@@ -35,4 +35,3 @@ Currently under review at _Big Data & Society_ as part of their Special Issue _S
 Repo contains all shareable data and analytical code for the paper.
 
 Correspondence: mark.green@liverpool.ac.uk
-Twitter: @markalangreen

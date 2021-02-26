@@ -16,4 +16,5 @@ _Data wrangling_
 _Data analysis_
 
 * _time_series_analysis.R_ - Code to run all of the time-series analyses using the data on counts by hour or minute of days.
+* _negativebinomial_modelling.R_ - Script runs the multi-level negative binomial regression models and is called from the above script.
 * _topic_modelling.R_ - Code to run the topic modelling analyses to classify tweets identified as misinformation based on their content.
